@@ -1,5 +1,6 @@
-from datetime import timedelta
 from json import dumps
+from typing import Optional
+from datetime import timedelta
 
 from minio import Minio
 from minio.deleteobjects import DeleteObject
@@ -7,23 +8,15 @@ from minio.error import S3Error
 
 from .storage import StorageClient
 from .exception import StorageException
+from .http import HttpMethod
+from .config import config
+from .log import logger
 
 
-def human_read_to_byte(h_input: str) -> int:
-    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    size = h_input.split()  # divide '1 GB' into ['1', 'GB']
-    num, unit = int(size[0]), size[1]
-    idx = size_name.index(
-        unit
-    )  # index in list of sizes determines power to raise it to
-    factor = (
-        1024 ** idx
-    )  # ** is the "exponent" operator - you can use it instead of math.pow()
-    return num * factor
-
-
-# Example anonymous read-write bucket policy.
 def _public_bucket_acl(bucket_name: str) -> str:
+    """
+    Example anonymous read-write bucket policy.
+    """
     return dumps(
         {
             "Version": "2012-10-17",
@@ -60,31 +53,32 @@ class S3(StorageClient):
     S3.
     """
 
-    def __init__(
-        self,
-        endpoint,
-        access_key=None,
-        secret_key=None,
-        session_token=None,
-        secure=True,
-        region=None,
-        http_client=None,
-        credentials=None,
-    ) -> None:
-        super().__init__()
-        self._minio_client = Minio(
-            endpoint,
-            access_key=access_key,
-            secret_key=secret_key,
-            session_token=session_token,
-            secure=secure,
-            region=region,
-            http_client=http_client,
-            credentials=credentials,
-        )
+    _secure: bool = False
+    _minio_client: Minio = None
 
-    def configure(self) -> None:
-        return
+    @classmethod
+    def configure(cls) -> None:
+        s3_config = {
+            key: value
+            for key, value in config().items()
+            if key
+            in (
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+                "AWS_REGION",
+                "S3_ENDPOINT",
+            )
+        }
+        logger.debug("minio config is %s", s3_config)
+
+        cls._minio_client = Minio(
+            s3_config["S3_ENDPOINT"],
+            access_key=s3_config["AWS_ACCESS_KEY_ID"],
+            secret_key=s3_config["AWS_SECRET_ACCESS_KEY"],
+            session_token=None,
+            secure=cls._secure,
+            region=s3_config["AWS_REGION"],
+        )
 
     def bucket_exists(self, name: str) -> bool:
         return self._minio_client.bucket_exists(name)
@@ -151,24 +145,21 @@ class S3(StorageClient):
                 return False
             raise StorageException(msg) from None
 
-    def put_object_presigned_url(self, bucket_name: str, name: str) -> str:
+    def get_presigned_url(
+        self,
+        bucket_name: str,
+        name: str,
+        method: HttpMethod,
+        expires: Optional[timedelta],
+        _: Optional[str],
+    ) -> str:
         if not self.bucket_exists(bucket_name):
             raise StorageException(
                 "bucket {0} does not exist".format(bucket_name)
             )
-        return self._minio_client.presigned_put_object(
-            bucket_name,
-            name,
-            expires=timedelta(hours=2),
-        )
-
-    def get_object_presigned_url(self, bucket_name: str, name: str) -> str:
-        if not self.bucket_exists(bucket_name):
-            raise StorageException(
-                "bucket {0} does not exist".format(bucket_name)
-            )
-        return self._minio_client.presigned_get_object(
-            bucket_name,
-            name,
-            expires=timedelta(hours=2),
+        return self._minio_client.get_presigned_url(
+            method=method,
+            bucket_name=bucket_name,
+            object_name=name,
+            expires=expires,
         )

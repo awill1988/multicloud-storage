@@ -5,6 +5,9 @@ from abc import (
     ABC,
     abstractmethod,
 )
+from datetime import timedelta
+from typing import Optional
+from .http import HttpMethod
 
 
 class StorageClient(ABC):
@@ -18,10 +21,9 @@ class StorageClient(ABC):
     level operations based on those primitives.
     """
 
+    @classmethod
     @abstractmethod
-    def configure(
-        self,
-    ) -> None:
+    def configure(cls) -> None:
         pass
 
     @abstractmethod
@@ -52,9 +54,12 @@ class StorageClient(ABC):
         pass
 
     @abstractmethod
-    def put_object_presigned_url(self, bucket_name: str, name: str) -> str:
-        pass
-
-    @abstractmethod
-    def get_object_presigned_url(self, bucket_name: str, name: str) -> str:
+    def get_presigned_url(
+        self,
+        bucket_name: str,
+        name: str,
+        method: HttpMethod,
+        expires: Optional[timedelta],
+        content_type: Optional[str],
+    ) -> str:
         pass

@@ -1,23 +1,20 @@
 [build-system]
-requires = ["flit_core >=2,<4"]
+requires = ["flit_core >=2,<4", "setuptools", "wheel"]
 build-backend = "flit_core.buildapi"
 
 [tool.flit.metadata]
 module = "multicloud_storage"
 author = "Adam Williams"
-author-email = "adam.williams@onxmaps.com"
+author-email = "adamwt88@gmail.com"
+requires = ["google-cloud-storage", "minio", "python-dotenv", "setuptools"]
 home-page = "https://github.com/awill1988/multicloud-storage"
-requires-python = ">=3.7"
-requires = ["google-cloud-storage", "minio"]
-description-file = "README.md"
 classifiers = [
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-
-[tool.flit.sdist]
-include = ["doc/"]
-exclude = ["doc/*.html"]
+description-file = "README.md"
+requires-python = ">=3.8"
 
 [tool.black]
 line-length = 10

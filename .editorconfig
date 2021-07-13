@@ -18,6 +18,7 @@ indent_size = 4
 indent_style = space
 indent_size = 2
 
-[{Makefile,**.mk}]
+[{Makefile,**.mk,Makefile.os}]
 # Use tabs for indentation (Makefiles require tabs)
 indent_style = tab
+indent_size = 2

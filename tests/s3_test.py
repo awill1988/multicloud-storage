@@ -1,13 +1,12 @@
 import random
 import string
-from typing import Tuple
 import unittest
 from io import BytesIO
 from json import dumps
 from os import SEEK_END
-from multicloud_storage.exception import StorageException
-from multicloud_storage.minio import S3
-from multicloud_storage.storage import Storage
+from typing import Tuple
+
+from multicloud_storage import StorageException, S3, Storage
 
 
 def random_str() -> str:
@@ -24,7 +23,7 @@ def str_buffer(json_object: object) -> Tuple[BytesIO, int]:
     return data, num_bytes
 
 
-class StorageTest(unittest.TestCase):
+class S3Test(unittest.TestCase):
     """
     StorageTest.
     The client code should be able to work with any pre-configured abstraction-
@@ -38,14 +37,7 @@ class StorageTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        access_key = "minio"
-        secret_key = "miniosecret"
-        cls.minio = S3(
-            "localhost:9000",
-            secure=False,
-            access_key=access_key,
-            secret_key=secret_key,
-        )
+        cls.minio = S3()
         cls.storage = Storage(cls.minio)
         cls.bucket_name = random_str()
         cls.object_name = random_str()
@@ -99,13 +91,13 @@ class StorageTest(unittest.TestCase):
     def test_put_object_presigned_url(self):
         if not self.storage.bucket_exists(self.bucket_name):
             self.storage.make_bucket(self.bucket_name)
-        self.storage.put_object_presigned_url(
-            self.bucket_name, self.object_name
+        self.storage.get_presigned_url(
+            self.bucket_name, self.object_name, "PUT"
         )
 
     def test_get_object_presigned_url(self):
         if not self.storage.bucket_exists(self.bucket_name):
             self.storage.make_bucket(self.bucket_name)
-        self.storage.get_object_presigned_url(
-            self.bucket_name, self.object_name
+        self.storage.get_presigned_url(
+            self.bucket_name, self.object_name, "GET"
         )

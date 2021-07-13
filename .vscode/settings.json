@@ -10,6 +10,7 @@
     "/Library/**",
     ".coverage",
     "**/__pycache__/**",
+    "**/.venv/lib/**"
   ],
   "python.linting.pylintArgs": [
     "--rcfile=${workspaceFolder}/.pylintrc"
@@ -26,6 +27,7 @@
   ],
   "python.linting.mypyEnabled": true,
   "python.formatting.provider": "black",
+  "python.formatting.blackPath": "${workspaceFolder}/.venv/bin/black",
   "python.formatting.blackArgs": [
     "--line-length",
     "79",
