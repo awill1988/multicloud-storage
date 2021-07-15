@@ -6,7 +6,12 @@ build-backend = "flit_core.buildapi"
 module = "multicloud_storage"
 author = "Adam Williams"
 author-email = "adamwt88@gmail.com"
-requires = ["google-cloud-storage", "minio", "python-dotenv", "setuptools"]
+requires = [
+    "google-cloud-storage",
+    "minio",
+    "python-dotenv",
+    "typing_extensions",
+]
 home-page = "https://github.com/awill1988/multicloud-storage"
 classifiers = [
     "Intended Audience :: Developers",
