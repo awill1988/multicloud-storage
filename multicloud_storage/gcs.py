@@ -15,9 +15,11 @@ class GCS(StorageClient):
     GCS.
     """
 
-    _gcs_client = None
+    _gcs_client: Client = None
     _gcs_project = None
-    _use_public_urls = None
+    _use_public_urls: Optional[bool] = None
+    _emulator_hostname: Optional[str] = None
+    _external_hostname: Optional[str] = None
 
     @classmethod
     def _project(cls):
@@ -43,9 +45,16 @@ class GCS(StorageClient):
             in (
                 "STORAGE_EMULATOR_HOST",
                 "GOOGLE_CLOUD_PROJECT",
+                "STORAGE_EXTERNAL_HOSTNAME",
             )
         }
         cls._gcs_project = gcs_config["GOOGLE_CLOUD_PROJECT"]
+        cls._emulator_hostname = gcs_config["STORAGE_EMULATOR_HOST"]
+        cls._external_hostname = (
+            gcs_config["STORAGE_EXTERNAL_HOSTNAME"]
+            if gcs_config["STORAGE_EXTERNAL_HOSTNAME"] is not None
+            else cls._emulator_hostname
+        )
 
         if gcs_config["STORAGE_EMULATOR_HOST"] is not None:
             logger.debug(
@@ -106,10 +115,16 @@ class GCS(StorageClient):
             )
         bucket = self._client().get_bucket(bucket_name)
         blob = bucket.blob(name)
-        return (
+        url = (
             blob.generate_signed_url(
                 expiration=expires, method=method, content_type=content_type
             )
             if not GCS._use_public_urls
             else blob.public_url
         )
+        if (
+            self._use_public_urls
+            and self._external_hostname != self._emulator_hostname
+        ):
+            url = url.replace(self._emulator_hostname, self._external_hostname)
+        return url

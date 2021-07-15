@@ -10,7 +10,6 @@ from .storage import StorageClient
 from .exception import StorageException
 from .http import HttpMethod
 from .config import config
-from .log import logger
 
 
 def _public_bucket_acl(bucket_name: str) -> str:
@@ -55,6 +54,8 @@ class S3(StorageClient):
 
     _secure: bool = False
     _minio_client: Minio = None
+    _endpoint: Optional[str] = None
+    _external_hostname: Optional[str] = None
 
     @classmethod
     def configure(cls) -> None:
@@ -67,10 +68,17 @@ class S3(StorageClient):
                 "AWS_SECRET_ACCESS_KEY",
                 "AWS_REGION",
                 "S3_ENDPOINT",
+                "STORAGE_EXTERNAL_HOSTNAME",
             )
         }
+        cls._endpoint = s3_config["S3_ENDPOINT"]
+        cls._external_hostname = (
+            s3_config["STORAGE_EXTERNAL_HOSTNAME"]
+            if s3_config["STORAGE_EXTERNAL_HOSTNAME"] is not None
+            else cls._endpoint
+        )
         cls._minio_client = Minio(
-            s3_config["S3_ENDPOINT"],
+            cls._endpoint,
             access_key=s3_config["AWS_ACCESS_KEY_ID"],
             secret_key=s3_config["AWS_SECRET_ACCESS_KEY"],
             session_token=None,
@@ -160,4 +168,4 @@ class S3(StorageClient):
             bucket_name=bucket_name,
             object_name=name,
             expires=expires,
-        )
+        ).replace(self._endpoint, self._external_hostname)

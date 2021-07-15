@@ -17,4 +17,7 @@ def config() -> Dict:
         "AWS_SECRET_ACCESS_KEY": getenv("AWS_SECRET_ACCESS_KEY", default=None),
         "AWS_REGION": getenv("AWS_REGION", default=None),
         "S3_ENDPOINT": getenv("S3_ENDPOINT", default=None),
+        "STORAGE_EXTERNAL_HOSTNAME": getenv(
+            "STORAGE_EXTERNAL_HOSTNAME", default=None
+        ),
     }
