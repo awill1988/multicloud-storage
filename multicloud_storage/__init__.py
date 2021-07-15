@@ -1,6 +1,6 @@
 """An amazing sample package!"""
 
-__version__ = "0.0.6"
+__version__ = "0.0.7"
 
 from .gcs import GCS
 from .minio import S3

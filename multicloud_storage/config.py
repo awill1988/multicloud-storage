@@ -15,6 +15,7 @@ def config() -> Dict:
         ),
         "AWS_ACCESS_KEY_ID": getenv("AWS_ACCESS_KEY_ID", default=None),
         "AWS_SECRET_ACCESS_KEY": getenv("AWS_SECRET_ACCESS_KEY", default=None),
+        "AWS_SESSION_TOKEN": getenv("AWS_SESSION_TOKEN", default=None),
         "AWS_REGION": getenv("AWS_REGION", default=None),
         "S3_ENDPOINT": getenv("S3_ENDPOINT", default=None),
         "STORAGE_EXTERNAL_HOSTNAME": getenv(

@@ -1,15 +1,24 @@
+from datetime import datetime, timedelta
 from json import dumps
 from typing import Optional
-from datetime import timedelta
 
 from minio import Minio
+from minio.credentials import Credentials
 from minio.deleteobjects import DeleteObject
 from minio.error import S3Error
+from minio.signer import presign_v4
 
-from .storage import StorageClient
+from .config import config
 from .exception import StorageException
 from .http import HttpMethod
-from .config import config
+from .storage import StorageClient
+from urllib.parse import urlsplit
+
+
+def _credentials(
+    access_key: str, secret_key: str, session_token: Optional[str]
+) -> Credentials:
+    return Credentials(access_key, secret_key, session_token)
 
 
 def _public_bucket_acl(bucket_name: str) -> str:
@@ -54,9 +63,10 @@ class S3(StorageClient):
 
     _secure: bool = False
     _minio_client: Minio = None
-    _minio_external_client: Minio = None
     _endpoint: Optional[str] = None
     _external_hostname: Optional[str] = None
+    _credentials: Credentials = None
+    _region: str = "us-east-1"
 
     @classmethod
     def configure(cls) -> None:
@@ -67,29 +77,32 @@ class S3(StorageClient):
             in (
                 "AWS_ACCESS_KEY_ID",
                 "AWS_SECRET_ACCESS_KEY",
+                "AWS_SESSION_TOKEN",
                 "AWS_REGION",
                 "S3_ENDPOINT",
                 "STORAGE_EXTERNAL_HOSTNAME",
             )
         }
         cls._endpoint = s3_config["S3_ENDPOINT"]
+        cls._region = (
+            s3_config["AWS_REGION"]
+            if s3_config["AWS_REGION"] is not None
+            else cls._region
+        )
         cls._external_hostname = (
             s3_config["STORAGE_EXTERNAL_HOSTNAME"]
             if s3_config["STORAGE_EXTERNAL_HOSTNAME"] is not None
             else cls._endpoint
         )
+        cls._credentials = _credentials(
+            s3_config["AWS_ACCESS_KEY_ID"],
+            s3_config["AWS_SECRET_ACCESS_KEY"],
+            None,
+        )
         cls._minio_client = Minio(
             cls._endpoint,
-            access_key=s3_config["AWS_ACCESS_KEY_ID"],
-            secret_key=s3_config["AWS_SECRET_ACCESS_KEY"],
-            session_token=None,
-            secure=cls._secure,
-            region=s3_config["AWS_REGION"],
-        )
-        cls._minio_external_client = Minio(
-            cls._external_hostname,
-            access_key=s3_config["AWS_ACCESS_KEY_ID"],
-            secret_key=s3_config["AWS_SECRET_ACCESS_KEY"],
+            access_key=cls._credentials.access_key,
+            secret_key=cls._credentials.secret_key,
             session_token=None,
             secure=cls._secure,
             region=s3_config["AWS_REGION"],
@@ -166,16 +179,31 @@ class S3(StorageClient):
         name: str,
         method: HttpMethod,
         expires: Optional[timedelta],
-        _: Optional[str],
+        _: Optional[str] = None,
     ) -> str:
         if not self.bucket_exists(bucket_name):
             raise StorageException(
                 "bucket {0} does not exist".format(bucket_name)
             )
+        url = urlsplit(
+            "http{}://{}/{}/{}".format(
+                "s" if self._secure else "",
+                self._external_hostname,
+                bucket_name,
+                name,
+            ),
+        )
+        if expires is None:
+            raise StorageException("expires must be defined")
+        now = datetime.now()
+        signed_url = presign_v4(
+            method,
+            url,
+            region=self._region,
+            credentials=self._credentials,
+            expires=int(expires.total_seconds()),
+            date=now,
+        )
+
         # use the "external" minio client so that signed urls work properly
-        return self._minio_external_client.get_presigned_url(
-            method=method,
-            bucket_name=bucket_name,
-            object_name=name,
-            expires=expires,
-        ).replace(self._endpoint, self._external_hostname)
+        return signed_url.geturl()
