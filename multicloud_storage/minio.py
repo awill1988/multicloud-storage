@@ -54,6 +54,7 @@ class S3(StorageClient):
 
     _secure: bool = False
     _minio_client: Minio = None
+    _minio_external_client: Minio = None
     _endpoint: Optional[str] = None
     _external_hostname: Optional[str] = None
 
@@ -79,6 +80,14 @@ class S3(StorageClient):
         )
         cls._minio_client = Minio(
             cls._endpoint,
+            access_key=s3_config["AWS_ACCESS_KEY_ID"],
+            secret_key=s3_config["AWS_SECRET_ACCESS_KEY"],
+            session_token=None,
+            secure=cls._secure,
+            region=s3_config["AWS_REGION"],
+        )
+        cls._minio_external_client = Minio(
+            cls._external_hostname,
             access_key=s3_config["AWS_ACCESS_KEY_ID"],
             secret_key=s3_config["AWS_SECRET_ACCESS_KEY"],
             session_token=None,
@@ -163,7 +172,8 @@ class S3(StorageClient):
             raise StorageException(
                 "bucket {0} does not exist".format(bucket_name)
             )
-        return self._minio_client.get_presigned_url(
+        # use the "external" minio client so that signed urls work properly
+        return self._minio_external_client.get_presigned_url(
             method=method,
             bucket_name=bucket_name,
             object_name=name,
