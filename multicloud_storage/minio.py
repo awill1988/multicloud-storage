@@ -69,8 +69,6 @@ class S3(StorageClient):
                 "S3_ENDPOINT",
             )
         }
-        logger.debug("minio config is %s", s3_config)
-
         cls._minio_client = Minio(
             s3_config["S3_ENDPOINT"],
             access_key=s3_config["AWS_ACCESS_KEY_ID"],

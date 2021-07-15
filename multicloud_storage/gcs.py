@@ -45,7 +45,6 @@ class GCS(StorageClient):
                 "GOOGLE_CLOUD_PROJECT",
             )
         }
-        logger.debug("config is %s", gcs_config)
         cls._gcs_project = gcs_config["GOOGLE_CLOUD_PROJECT"]
 
         if gcs_config["STORAGE_EMULATOR_HOST"] is not None:
