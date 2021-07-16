@@ -212,7 +212,7 @@ class S3(StorageClient):
         _hostname = (
             self._external_hostname if use_hostname is None else use_hostname
         )
-        _method = (method.value if not isinstance(method, str) else method,)
+        _method = method.value if not isinstance(method, str) else method
         _scheme = "https" if _secure else "http"
         if _method in ("GET", "HEAD") and not self.object_exists(
             bucket_name, name

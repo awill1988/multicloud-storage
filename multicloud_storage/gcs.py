@@ -139,7 +139,7 @@ class GCS(StorageClient):
             )
         bucket = self._client().get_bucket(bucket_name)
         blob = bucket.blob(name)
-        _method = (method.value if not isinstance(method, str) else method,)
+        _method = method.value if not isinstance(method, str) else method
         if not blob.exists() and _method == "GET":
             raise StorageException(
                 "object {0} does not exist in bucket {1}".format(
