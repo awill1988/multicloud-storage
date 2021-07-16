@@ -1,3 +1,4 @@
+from multicloud_storage.http import HttpMethod
 import random
 import string
 import unittest
@@ -132,9 +133,20 @@ class S3Test(unittest.TestCase):
         Asserts presigned urls can be generated for put requests.
         """
         url = self.storage.get_presigned_url(
-            self.bucket_name, self.object_name, method="PUT"
+            self.bucket_name, self.object_name, method=HttpMethod.PUT
         )
         self.assertIn(self.object_name, url)
+        self.assertIn("http://", url)
+        hostname = random_str()
+        url = self.storage.get_presigned_url(
+            self.bucket_name,
+            self.object_name,
+            method=HttpMethod.PUT,
+            use_hostname=hostname,
+            secure=True,
+        )
+        self.assertIn("https://", url)
+        self.assertIn(hostname, url)
 
     def test_get_presigned_url(self):
         """
@@ -148,7 +160,7 @@ class S3Test(unittest.TestCase):
         url = self.storage.get_presigned_url(
             self.bucket_name,
             self.object_name,
-            method="GET",
+            method=HttpMethod.GET,
             use_hostname=hostname,
         )
         self.assertIn(hostname, url)

@@ -85,7 +85,7 @@ class Storage:
     ) -> str:
         logger.debug(
             "get_presigned_url(bucket_name='%s',name='%s', method='%s',"
-            " expires=%s, content_type='%s', use_hostname='%s', secure=%s)",
+            " expires=%s, content_type='%s', use_hostname=%s, secure=%s)",
             bucket_name,
             name,
             method,

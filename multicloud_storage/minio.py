@@ -14,6 +14,7 @@ from .config import config
 from .exception import StorageException
 from .http import HttpMethod
 from .storage import StorageClient
+from .log import logger
 
 
 def _credentials(
@@ -204,19 +205,21 @@ class S3(StorageClient):
             raise StorageException(
                 "bucket {0} does not exist".format(bucket_name)
             )
+        if expires is None:
+            raise StorageException("expires must be defined")
         _secure = secure if secure is not None else self._secure
+        _hostname = (
+            self._external_hostname if use_hostname is None else use_hostname
+        )
         url = urlsplit(
             "http{}://{}/{}/{}".format(
                 "s" if _secure else "",
-                self._external_hostname
-                if use_hostname is None
-                else use_hostname,
+                _hostname,
                 bucket_name,
                 name,
             ),
         )
-        if expires is None:
-            raise StorageException("expires must be defined")
+        logger.debug("signing the url %s", url)
         now = datetime.now()
         signed_url = presign_v4(
             method,
