@@ -143,3 +143,7 @@ class Storage:
             name,
             new_name,
         )
+
+    def md5_checksum(self, bucket_name: str, name: str) -> str:
+        logger.debug("md5_hash(bucket_name='%s',name='%s')", bucket_name, name)
+        return self._client.md5_checksum(bucket_name, name)

@@ -9,6 +9,7 @@ from minio.credentials import Credentials
 from minio.deleteobjects import DeleteObject
 from minio.error import S3Error
 from minio.signer import presign_v4
+from requests import head
 
 from .config import config
 from .exception import StorageException
@@ -211,9 +212,19 @@ class S3(StorageClient):
         _hostname = (
             self._external_hostname if use_hostname is None else use_hostname
         )
+        _method = (method.value if not isinstance(method, str) else method,)
+        _scheme = "https" if _secure else "http"
+        if _method in ("GET", "HEAD") and not self.object_exists(
+            bucket_name, name
+        ):
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    name, bucket_name
+                )
+            )
         url = urlsplit(
-            "http{}://{}/{}/{}".format(
-                "s" if _secure else "",
+            "{}://{}/{}/{}".format(
+                _scheme,
                 _hostname,
                 bucket_name,
                 name,
@@ -222,7 +233,7 @@ class S3(StorageClient):
         logger.debug("signing the url %s", url)
         now = datetime.now()
         signed_url = presign_v4(
-            method.value if not isinstance(method, str) else method,
+            _method,
             url,
             region=self._region,
             credentials=self._credentials,
@@ -265,3 +276,13 @@ class S3(StorageClient):
             new_name,
         )
         self.delete_object(bucket_name, name)
+
+    def md5_checksum(self, bucket_name: str, name: str) -> str:
+        if not self.object_exists(bucket_name, name):
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    name, bucket_name
+                )
+            )
+        metadata = self._minio_client.stat_object(bucket_name, name)
+        return metadata.etag

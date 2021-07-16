@@ -1,3 +1,5 @@
+from base64 import b64decode
+from binascii import hexlify
 from datetime import timedelta
 from io import BytesIO
 from typing import Optional, Union
@@ -21,6 +23,7 @@ class GCS(StorageClient):
     _use_public_urls: Optional[bool] = None
     _emulator_hostname: Optional[str] = None
     _external_hostname: Optional[str] = None
+    _secure: bool = True
 
     @classmethod
     def _project(cls):
@@ -51,18 +54,21 @@ class GCS(StorageClient):
         }
         cls._gcs_project = gcs_config["GOOGLE_CLOUD_PROJECT"]
         cls._emulator_hostname = gcs_config["STORAGE_EMULATOR_HOST"]
+
         cls._external_hostname = (
             gcs_config["STORAGE_EXTERNAL_HOSTNAME"]
             if gcs_config["STORAGE_EXTERNAL_HOSTNAME"] is not None
             else cls._emulator_hostname
         )
 
-        if gcs_config["STORAGE_EMULATOR_HOST"] is not None:
+        if cls._emulator_hostname is not None:
+            if cls._emulator_hostname.find("https") == -1:
+                cls._secure = False
+
             logger.debug(
                 "will not sign urls due to presense of %s",
                 "STORAGE_EMULATOR_HOST",
             )
-            # we won't actually sign urls in this case
             cls._use_public_urls = True
 
         cls._gcs_client = Client(project=cls._gcs_project)
@@ -74,7 +80,7 @@ class GCS(StorageClient):
     def make_bucket(self, name: str) -> None:
         if self.bucket_exists(name):
             raise StorageException("bucket {0} already exists".format(name))
-        self._client().bucket(name).create()
+        self._client().create_bucket(name)
 
     def remove_bucket(self, name: str) -> None:
         if not self.bucket_exists(name):
@@ -134,19 +140,22 @@ class GCS(StorageClient):
         bucket = self._client().get_bucket(bucket_name)
         blob = bucket.blob(name)
         _method = (method.value if not isinstance(method, str) else method,)
-
-        url = (
-            blob.generate_signed_url(
-                expiration=expires, method=_method, content_type=content_type
+        if not blob.exists() and _method == "GET":
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    name, bucket_name
+                )
             )
-            if not GCS._use_public_urls
-            else blob.public_url
+        if self._use_public_urls:
+            _scheme = "http" if not self._secure else "https"
+            public_url = blob.public_url.replace(
+                "https://storage.googleapis.com",
+                f"{_scheme}://{self._external_hostname}",
+            )
+            return public_url
+        url = blob.generate_signed_url(
+            expiration=expires, method=_method, content_type=content_type
         )
-        if (
-            self._use_public_urls
-            and self._external_hostname != self._emulator_hostname
-        ):
-            url = url.replace(self._emulator_hostname, self._external_hostname)
         return url
 
     def copy_object(
@@ -205,3 +214,14 @@ class GCS(StorageClient):
         bucket = self._client().bucket(bucket_name)
         blob = bucket.blob(name)
         bucket.rename_blob(blob, new_name)
+
+    def md5_checksum(self, bucket_name: str, name: str) -> str:
+        if not self.object_exists(bucket_name, name):
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    name, bucket_name
+                )
+            )
+        bucket = self._client().bucket(bucket_name)
+        blob = bucket.get_blob(name)
+        return hexlify(b64decode(blob.md5_hash)).decode("utf-8")

@@ -96,3 +96,7 @@ class StorageClient(ABC):
         secure: Optional[bool],
     ) -> str:
         pass
+
+    @abstractmethod
+    def md5_checksum(self, bucket_name: str, name: str) -> str:
+        pass

@@ -1,11 +1,13 @@
 import random
 import string
-from typing import Tuple
 import unittest
+from hashlib import md5
 from io import BytesIO
 from json import dumps, loads
 from os import SEEK_END
-from multicloud_storage import StorageException, GCS, Storage
+from typing import Tuple
+
+from multicloud_storage import GCS, Storage, StorageException
 
 
 def random_str() -> str:
@@ -20,6 +22,11 @@ def str_buffer(json_object: object) -> Tuple[BytesIO, int]:
     num_bytes = data.tell()
     data.seek(0)
     return data, num_bytes
+
+
+def calc_checksum(data: BytesIO) -> str:
+    md5_hash = md5(data.read().strip())
+    return md5_hash.hexdigest()
 
 
 class GCSTest(unittest.TestCase):
@@ -194,3 +201,16 @@ class GCSTest(unittest.TestCase):
         self.assertTrue(
             self.storage.object_exists(self.bucket_name, new_object_name)
         )
+
+    def test_md5_hash(self):
+        """
+        Asserts it is possible to retrieve an md5 hash.
+        """
+        data, size = str_buffer(self.object_data)
+        self.storage.put_object(self.bucket_name, self.object_name, data, size)
+        checksum = self.storage.md5_checksum(
+            self.bucket_name, self.object_name
+        )
+        self.assertGreater(len(checksum), 0)
+        data.seek(0)
+        self.assertEqual(calc_checksum(data), checksum)
