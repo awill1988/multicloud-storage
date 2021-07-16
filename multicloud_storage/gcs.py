@@ -107,6 +107,17 @@ class GCS(StorageClient):
             )
         return self._client().bucket(bucket_name).blob(name).exists()
 
+    def get_object(self, bucket_name: str, name: str) -> BytesIO:
+        if not self.object_exists(bucket_name, name):
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    name, bucket_name
+                )
+            )
+        bucket = self._client().bucket(bucket_name)
+        blob = bucket.blob(name)
+        return BytesIO(blob.download_as_bytes())
+
     def get_presigned_url(  # pylint: disable=keyword-arg-before-vararg
         self,
         bucket_name: str,
@@ -135,3 +146,25 @@ class GCS(StorageClient):
         ):
             url = url.replace(self._emulator_hostname, self._external_hostname)
         return url
+
+    def copy_object(
+        self,
+        source_bucket_name: str,
+        source_name: str,
+        destination_bucket_name: str,
+        destination_name: str,
+    ) -> None:
+        if not self.object_exists(source_bucket_name, source_name):
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    source_name, source_bucket_name
+                )
+            )
+        storage_client = self._client()
+
+        source_bucket = storage_client.bucket(source_bucket_name)
+        source_blob = source_bucket.blob(source_name)
+        destination_bucket = storage_client.bucket(destination_bucket_name)
+        source_bucket.copy_blob(
+            source_blob, destination_bucket, destination_name
+        )

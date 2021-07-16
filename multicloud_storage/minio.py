@@ -2,8 +2,9 @@ from datetime import datetime, timedelta
 from json import dumps
 from typing import Optional
 from urllib.parse import urlsplit
-
+from io import BytesIO
 from minio import Minio
+from minio.commonconfig import CopySource
 from minio.credentials import Credentials
 from minio.deleteobjects import DeleteObject
 from minio.error import S3Error
@@ -172,6 +173,23 @@ class S3(StorageClient):
                 return False
             raise StorageException(msg) from None
 
+    def get_object(self, bucket_name: str, name: str) -> BytesIO:
+        if not self.object_exists(bucket_name, name):
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    name, bucket_name
+                )
+            )
+        data = None
+        try:
+            response = self._minio_client.get_object(bucket_name, name)
+            # Read data from response.
+            data = response.data
+        finally:
+            response.close()
+            response.release_conn()
+        return BytesIO(data)
+
     def get_presigned_url(
         self,
         bucket_name: str,
@@ -211,3 +229,22 @@ class S3(StorageClient):
 
         # use the "external" minio client so that signed urls work properly
         return signed_url.geturl()
+
+    def copy_object(
+        self,
+        source_bucket_name: str,
+        source_name: str,
+        destination_bucket_name: str,
+        destination_name: str,
+    ) -> None:
+        if not self.object_exists(source_bucket_name, source_name):
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    source_name, source_bucket_name
+                )
+            )
+        self._minio_client.copy_object(
+            destination_bucket_name,
+            destination_name,
+            CopySource(source_bucket_name, source_name),
+        )

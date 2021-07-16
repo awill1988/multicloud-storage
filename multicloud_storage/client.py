@@ -40,12 +40,30 @@ class StorageClient(ABC):
         pass
 
     @abstractmethod
+    def get_object(
+        self,
+        bucket_name: str,
+        name: str,
+    ) -> BytesIO:
+        pass
+
+    @abstractmethod
     def put_object(
         self,
         bucket_name: str,
         name: str,
         data: BytesIO,
         size: int,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def copy_object(
+        self,
+        source_bucket_name: str,
+        source_name: str,
+        destination_bucket_name: str,
+        destination_name: str,
     ) -> None:
         pass
 

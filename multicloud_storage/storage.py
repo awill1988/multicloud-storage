@@ -51,6 +51,16 @@ class Storage:
         )
         return self._client.put_object(bucket_name, name, data, size)
 
+    def get_object(
+        self,
+        bucket_name: str,
+        name: str,
+    ) -> BytesIO:
+        logger.debug(
+            "get_object(bucket_name='%s',name='%s')", bucket_name, name
+        )
+        return self._client.get_object(bucket_name, name)
+
     def object_exists(self, bucket_name: str, name: str) -> bool:
         logger.debug(
             "object_exists(bucket_name='%s',name='%s')", bucket_name, name
@@ -92,4 +102,26 @@ class Storage:
             content_type,
             use_hostname,
             secure,
+        )
+
+    def copy_object(
+        self,
+        source_bucket_name: str,
+        source_name: str,
+        destination_bucket_name: str,
+        destination_name: str,
+    ) -> None:
+        logger.debug(
+            "copy_object(source_bucket_name='%s',source_name='%s',"
+            " destination_bucket_name='%s', destination_name='%s')",
+            source_bucket_name,
+            source_name,
+            destination_bucket_name,
+            destination_name,
+        )
+        self._client.copy_object(
+            source_bucket_name,
+            source_name,
+            destination_bucket_name,
+            destination_name,
         )

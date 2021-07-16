@@ -3,7 +3,7 @@ import string
 from typing import Tuple
 import unittest
 from io import BytesIO
-from json import dumps
+from json import dumps, loads
 from os import SEEK_END
 from multicloud_storage import StorageException, GCS, Storage
 
@@ -143,3 +143,33 @@ class GCSTest(unittest.TestCase):
             self.bucket_name, self.object_name, method="GET"
         )
         self.assertIn(self.object_name, url)
+
+    def test_get_object(self):
+        """
+        Asserts an object can be retrieved from the storage implementation.
+        """
+        data, size = str_buffer(self.object_data)
+        self.storage.put_object(self.bucket_name, self.object_name, data, size)
+        data = self.storage.get_object(self.bucket_name, self.object_name)
+        self.assertEqual(self.object_data, loads(data.read().decode("utf-8")))
+
+    def test_copy_object(self):
+        """
+        Asserts an object can be copied from one place to another.
+        """
+        data, size = str_buffer(self.object_data)
+        self.storage.put_object(self.bucket_name, self.object_name, data, size)
+        new_object_name = random_str()
+        self.storage.copy_object(
+            self.bucket_name,
+            self.object_name,
+            self.bucket_name,
+            new_object_name,
+        )
+        self.assertTrue(
+            self.storage.object_exists(self.bucket_name, new_object_name)
+        )
+        new_data = self.storage.get_object(self.bucket_name, new_object_name)
+        data.seek(0)
+        self.assertEqual(new_data.read(), data.read())
+        self.storage.delete_object(self.bucket_name, new_object_name)
