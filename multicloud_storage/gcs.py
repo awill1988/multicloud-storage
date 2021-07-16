@@ -165,6 +165,25 @@ class GCS(StorageClient):
         source_bucket = storage_client.bucket(source_bucket_name)
         source_blob = source_bucket.blob(source_name)
         destination_bucket = storage_client.bucket(destination_bucket_name)
-        source_bucket.copy_blob(
-            source_blob, destination_bucket, destination_name
+        destination_blob = destination_bucket.blob(destination_name)
+        logger.debug(
+            "copying %s/%s to %s/%s",
+            source_bucket_name,
+            source_name,
+            destination_bucket_name,
+            destination_name,
         )
+        rewrite_token = False
+        while True:
+            (
+                rewrite_token,
+                bytes_rewritten,
+                bytes_to_rewrite,
+            ) = destination_blob.rewrite(source_blob, token=rewrite_token)
+            logger.debug(
+                "...progress so far: %s/%s bytes...",
+                bytes_rewritten,
+                bytes_to_rewrite,
+            )
+            if not rewrite_token:
+                break
