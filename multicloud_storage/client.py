@@ -68,6 +68,15 @@ class StorageClient(ABC):
         pass
 
     @abstractmethod
+    def rename_object(
+        self,
+        bucket_name: str,
+        name: str,
+        new_name: str,
+    ) -> None:
+        pass
+
+    @abstractmethod
     def object_exists(self, bucket_name: str, name: str) -> bool:
         pass
 

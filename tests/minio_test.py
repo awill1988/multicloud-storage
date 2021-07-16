@@ -1,4 +1,3 @@
-from multicloud_storage.http import HttpMethod
 import random
 import string
 import unittest
@@ -7,7 +6,8 @@ from json import dumps, loads
 from os import SEEK_END
 from typing import Tuple
 
-from multicloud_storage import StorageException, S3, Storage
+from multicloud_storage import S3, Storage, StorageException
+from multicloud_storage.http import HttpMethod
 
 
 def random_str() -> str:
@@ -50,6 +50,10 @@ class S3Test(unittest.TestCase):
 
     def setUp(self) -> None:
         self.temp_bucket_name = random_str()
+        try:
+            self.storage.make_bucket(self.bucket_name)
+        except:  # pylint: disable=bare-except
+            pass
 
     def tearDown(self) -> None:
         try:
@@ -194,3 +198,20 @@ class S3Test(unittest.TestCase):
         data.seek(0)
         self.assertEqual(new_data.read(), data.read())
         self.storage.delete_object(self.bucket_name, new_object_name)
+
+    def test_rename_object(self):
+        """
+        Asserts an object can be renamed.
+        """
+        data, size = str_buffer(self.object_data)
+        self.storage.put_object(self.bucket_name, self.object_name, data, size)
+        new_object_name = random_str()
+        self.storage.rename_object(
+            self.bucket_name, self.object_name, new_object_name
+        )
+        self.assertFalse(
+            self.storage.object_exists(self.bucket_name, self.object_name)
+        )
+        self.assertTrue(
+            self.storage.object_exists(self.bucket_name, new_object_name)
+        )

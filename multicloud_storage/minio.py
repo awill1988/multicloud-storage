@@ -251,3 +251,17 @@ class S3(StorageClient):
             destination_name,
             CopySource(source_bucket_name, source_name),
         )
+
+    def rename_object(
+        self,
+        bucket_name: str,
+        name: str,
+        new_name: str,
+    ) -> None:
+        self.copy_object(
+            bucket_name,
+            name,
+            bucket_name,
+            new_name,
+        )
+        self.delete_object(bucket_name, name)

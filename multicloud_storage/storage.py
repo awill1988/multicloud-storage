@@ -125,3 +125,21 @@ class Storage:
             destination_bucket_name,
             destination_name,
         )
+
+    def rename_object(
+        self,
+        bucket_name: str,
+        name: str,
+        new_name: str,
+    ) -> None:
+        logger.debug(
+            "rename_object(bucket_name='%s', name='%s', new_name='%s')",
+            bucket_name,
+            name,
+            new_name,
+        )
+        self._client.rename_object(
+            bucket_name,
+            name,
+            new_name,
+        )

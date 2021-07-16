@@ -189,3 +189,19 @@ class GCS(StorageClient):
             )
             if not rewrite_token:
                 break
+
+    def rename_object(
+        self,
+        bucket_name: str,
+        name: str,
+        new_name: str,
+    ) -> None:
+        if not self.object_exists(bucket_name, name):
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    name, bucket_name
+                )
+            )
+        bucket = self._client().bucket(bucket_name)
+        blob = bucket.blob(name)
+        bucket.rename_blob(blob, new_name)
