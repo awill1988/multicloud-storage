@@ -6,7 +6,7 @@ from abc import (
     abstractmethod,
 )
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, Union
 from io import BytesIO
 from .http import HttpMethod
 
@@ -80,7 +80,7 @@ class StorageClient(ABC):
         self,
         bucket_name: str,
         name: str,
-        method: HttpMethod,
+        method: Union[str, HttpMethod],
         expires: Optional[timedelta],
         content_type: Optional[str],
         use_hostname: Optional[str],

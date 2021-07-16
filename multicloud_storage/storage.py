@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, Union
 from io import BytesIO
 
 from multicloud_storage.http import HttpMethod
@@ -77,7 +77,7 @@ class Storage:
         self,
         bucket_name: str,
         name: str,
-        method: HttpMethod,
+        method: Union[str, HttpMethod],
         expires: Optional[timedelta] = timedelta(days=1),
         content_type: Optional[str] = None,
         use_hostname: Optional[str] = None,

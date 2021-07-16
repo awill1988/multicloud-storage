@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from json import dumps
-from typing import Optional
+from typing import Optional, Union
 from urllib.parse import urlsplit
 from io import BytesIO
 from minio import Minio
@@ -195,7 +195,7 @@ class S3(StorageClient):
         self,
         bucket_name: str,
         name: str,
-        method: HttpMethod,
+        method: Union[str, HttpMethod],
         expires: Optional[timedelta],
         _: str = None,
         use_hostname: str = None,
@@ -222,7 +222,7 @@ class S3(StorageClient):
         logger.debug("signing the url %s", url)
         now = datetime.now()
         signed_url = presign_v4(
-            method,
+            method.value if not isinstance(method, str) else method,
             url,
             region=self._region,
             credentials=self._credentials,

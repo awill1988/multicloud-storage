@@ -1,6 +1,6 @@
 from datetime import timedelta
 from io import BytesIO
-from typing import Optional
+from typing import Optional, Union
 
 from google.cloud.storage import Client
 
@@ -122,7 +122,7 @@ class GCS(StorageClient):
         self,
         bucket_name: str,
         name: str,
-        method: HttpMethod,
+        method: Union[str, HttpMethod],
         expires: Optional[timedelta],
         content_type: Optional[str] = None,
         *_,
@@ -133,9 +133,11 @@ class GCS(StorageClient):
             )
         bucket = self._client().get_bucket(bucket_name)
         blob = bucket.blob(name)
+        _method = (method.value if not isinstance(method, str) else method,)
+
         url = (
             blob.generate_signed_url(
-                expiration=expires, method=method, content_type=content_type
+                expiration=expires, method=_method, content_type=content_type
             )
             if not GCS._use_public_urls
             else blob.public_url
