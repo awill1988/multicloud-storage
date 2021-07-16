@@ -7,6 +7,7 @@ from abc import (
 )
 from datetime import timedelta
 from typing import Optional
+from io import BytesIO
 from .http import HttpMethod
 
 
@@ -43,14 +44,17 @@ class StorageClient(ABC):
         self,
         bucket_name: str,
         name: str,
-        data: object,
+        data: BytesIO,
         size: int,
-        content_type: str,
     ) -> None:
         pass
 
     @abstractmethod
     def object_exists(self, bucket_name: str, name: str) -> bool:
+        pass
+
+    @abstractmethod
+    def delete_object(self, bucket_name: str, name: str) -> None:
         pass
 
     @abstractmethod
@@ -61,5 +65,7 @@ class StorageClient(ABC):
         method: HttpMethod,
         expires: Optional[timedelta],
         content_type: Optional[str],
+        use_hostname: Optional[str],
+        secure: Optional[bool],
     ) -> str:
         pass

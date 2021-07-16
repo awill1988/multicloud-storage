@@ -1,11 +1,12 @@
 import random
 import string
-from typing import Tuple
 import unittest
 from io import BytesIO
 from json import dumps
 from os import SEEK_END
-from multicloud_storage import StorageException, GCS, Storage
+from typing import Tuple
+
+from multicloud_storage import StorageException, S3, Storage
 
 
 def random_str() -> str:
@@ -22,15 +23,15 @@ def str_buffer(json_object: object) -> Tuple[BytesIO, int]:
     return data, num_bytes
 
 
-class GCSTest(unittest.TestCase):
+class S3Test(unittest.TestCase):
     """
-    GCSTest.
+    StorageTest.
     The client code should be able to work with any pre-configured abstraction-
     implementation combination.
     """
 
-    gcs = GCS()
-    storage: Storage = Storage(gcs)
+    minio: S3 = S3()
+    storage: Storage = Storage(minio)
     bucket_name: str = random_str()
     object_name: str = random_str()
     object_data = {"test": "test"}
@@ -61,7 +62,7 @@ class GCSTest(unittest.TestCase):
 
     def test_is_abstract(self):
         self.assertEqual(Storage, type(self.storage))
-        self.assertNotEqual(Storage, type(self.gcs))
+        self.assertNotEqual(Storage, type(self.minio))
 
     def test_bucket_exists(self):
         """
@@ -143,3 +144,11 @@ class GCSTest(unittest.TestCase):
             self.bucket_name, self.object_name, method="GET"
         )
         self.assertIn(self.object_name, url)
+        hostname = random_str()
+        url = self.storage.get_presigned_url(
+            self.bucket_name,
+            self.object_name,
+            method="GET",
+            use_hostname=hostname,
+        )
+        self.assertIn(hostname, url)

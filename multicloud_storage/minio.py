@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from json import dumps
 from typing import Optional
+from urllib.parse import urlsplit
 
 from minio import Minio
 from minio.credentials import Credentials
@@ -12,7 +13,6 @@ from .config import config
 from .exception import StorageException
 from .http import HttpMethod
 from .storage import StorageClient
-from urllib.parse import urlsplit
 
 
 def _credentials(
@@ -131,11 +131,12 @@ class S3(StorageClient):
             print("error occured when deleting object", error)
         self._minio_client.remove_bucket(name)
 
-    def delete_object(self, bucket_name: str) -> None:
+    def delete_object(self, bucket_name: str, name: str) -> None:
         if not self.bucket_exists(bucket_name):
             raise StorageException(
                 "bucket {0} does not exist".format(bucket_name)
             )
+        self._minio_client.remove_object(bucket_name, name)
 
     def put_object(
         self,
@@ -143,7 +144,6 @@ class S3(StorageClient):
         name: str,
         data: object,
         size: int,
-        content_type: str,
     ) -> None:
         if not self.bucket_exists(bucket_name):
             raise StorageException(
@@ -154,7 +154,6 @@ class S3(StorageClient):
             name,
             data,
             size,
-            content_type,
         )
 
     def object_exists(self, bucket_name: str, name: str) -> bool:
@@ -179,16 +178,21 @@ class S3(StorageClient):
         name: str,
         method: HttpMethod,
         expires: Optional[timedelta],
-        _: Optional[str] = None,
+        _: str = None,
+        use_hostname: str = None,
+        secure: bool = None,
     ) -> str:
         if not self.bucket_exists(bucket_name):
             raise StorageException(
                 "bucket {0} does not exist".format(bucket_name)
             )
+        _secure = secure if secure is not None else self._secure
         url = urlsplit(
             "http{}://{}/{}/{}".format(
-                "s" if self._secure else "",
-                self._external_hostname,
+                "s" if _secure else "",
+                self._external_hostname
+                if use_hostname is None
+                else use_hostname,
                 bucket_name,
                 name,
             ),

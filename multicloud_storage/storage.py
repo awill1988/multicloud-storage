@@ -1,5 +1,6 @@
 from datetime import timedelta
 from typing import Optional
+from io import BytesIO
 
 from multicloud_storage.http import HttpMethod
 
@@ -39,27 +40,28 @@ class Storage:
         self,
         bucket_name: str,
         name: str,
-        data: object,
+        data: BytesIO,
         size: int,
-        content_type: str = "application/octet-stream",
     ) -> None:
         logger.debug(
-            "put_object(bucket_name='%s', name='%s', data=[omitted], size=%i,"
-            " content_type='%s')",
+            "put_object(bucket_name='%s', name='%s', data=[omitted], size=%i)",
             bucket_name,
             name,
             size,
-            content_type,
         )
-        return self._client.put_object(
-            bucket_name, name, data, size, content_type
-        )
+        return self._client.put_object(bucket_name, name, data, size)
 
     def object_exists(self, bucket_name: str, name: str) -> bool:
         logger.debug(
             "object_exists(bucket_name='%s',name='%s')", bucket_name, name
         )
         return self._client.object_exists(bucket_name, name)
+
+    def delete_object(self, bucket_name: str, name: str) -> None:
+        logger.debug(
+            "delete_object(bucket_name='%s',name='%s')", bucket_name, name
+        )
+        return self._client.delete_object(bucket_name, name)
 
     def get_presigned_url(
         self,
@@ -68,16 +70,26 @@ class Storage:
         method: HttpMethod,
         expires: Optional[timedelta] = timedelta(days=1),
         content_type: Optional[str] = None,
+        use_hostname: Optional[str] = None,
+        secure: Optional[bool] = None,
     ) -> str:
         logger.debug(
             "get_presigned_url(bucket_name='%s',name='%s', method='%s',"
-            " expires=%s, content_type='%s')",
+            " expires=%s, content_type='%s', use_hostname='%s', secure=%s)",
             bucket_name,
             name,
             method,
             expires,
             content_type,
+            use_hostname,
+            secure,
         )
         return self._client.get_presigned_url(
-            bucket_name, name, method, expires, content_type
+            bucket_name,
+            name,
+            method,
+            expires,
+            content_type,
+            use_hostname,
+            secure,
         )

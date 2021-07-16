@@ -1,4 +1,5 @@
 from datetime import timedelta
+from io import BytesIO
 from typing import Optional
 
 from google.cloud.storage import Client
@@ -73,41 +74,47 @@ class GCS(StorageClient):
     def make_bucket(self, name: str) -> None:
         if self.bucket_exists(name):
             raise StorageException("bucket {0} already exists".format(name))
-        self._client().create_bucket(name)
+        self._client().bucket(name).create()
 
     def remove_bucket(self, name: str) -> None:
-        self._client().bucket(name).delete()
+        if not self.bucket_exists(name):
+            raise StorageException("bucket {0} does not exist".format(name))
+        bucket = self._client().bucket(name)
+        bucket.delete()
 
-    def delete_object(self, bucket_name: str) -> None:
+    def delete_object(self, bucket_name: str, name: str) -> None:
         if not self.bucket_exists(bucket_name):
             raise StorageException(
                 "bucket {0} does not exist".format(bucket_name)
             )
+        self._client().bucket(bucket_name).blob(name).delete()
 
     def put_object(
         self,
         bucket_name: str,
         name: str,
-        data: object,
-        size: int,
-        content_type: str,
+        data: BytesIO,
+        _: int = 0,
     ) -> None:
-        raise StorageException("put is not yet implemented")
+        blob = self._client().bucket(bucket_name).blob(name)
+        with blob.open("wb") as outfile:
+            outfile.write(data.getbuffer())
 
     def object_exists(self, bucket_name: str, name: str) -> bool:
         if not self.bucket_exists(bucket_name):
             raise StorageException(
                 "bucket {0} does not exist".format(bucket_name)
             )
-        return False
+        return self._client().bucket(bucket_name).blob(name).exists()
 
-    def get_presigned_url(
+    def get_presigned_url(  # pylint: disable=keyword-arg-before-vararg
         self,
         bucket_name: str,
         name: str,
         method: HttpMethod,
         expires: Optional[timedelta],
         content_type: Optional[str] = None,
+        *_,
     ) -> str:
         if not self.bucket_exists(bucket_name):
             raise StorageException(
