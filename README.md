@@ -1,6 +1,6 @@
 # Multicloud Storage
 
-This library leverages an abstract factory pattern to provide a common way to use cloud storage APIs whether they be on AWS, GCP, etc.
+This library leverages an abstract factory pattern to provide a common way to use cloud storage APIs whether they are stored on AWS, GCP, etc.
 
 ## Development
 
