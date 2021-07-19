@@ -163,10 +163,15 @@ class S3Test(unittest.TestCase):
         """
         Asserts presigned urls can be generated for get requests.
         """
-        url = self.storage.get_presigned_url(
-            self.bucket_name, self.object_name, method="GET"
+        self.assertRaises(
+            StorageException,
+            self.storage.get_presigned_url,
+            self.bucket_name,
+            self.object_name,
+            method=HttpMethod.GET,
         )
-        self.assertIn(self.object_name, url)
+        data, size = str_buffer(self.object_data)
+        self.storage.put_object(self.bucket_name, self.object_name, data, size)
         hostname = random_str()
         url = self.storage.get_presigned_url(
             self.bucket_name,
@@ -175,6 +180,7 @@ class S3Test(unittest.TestCase):
             use_hostname=hostname,
         )
         self.assertIn(hostname, url)
+        self.assertIn(self.object_name, url)
 
     def test_get_object(self):
         """

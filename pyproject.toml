@@ -1,25 +1,27 @@
 [build-system]
-requires = ["flit_core >=2,<4", "setuptools", "wheel"]
-build-backend = "flit_core.buildapi"
+requires = ["poetry-core>=1.0.0", "setuptools", "wheel"]
+build-backend = "poetry.core.masonry.api"
 
-[tool.flit.metadata]
-module = "multicloud_storage"
-author = "Adam Williams"
-author-email = "adamwt88@gmail.com"
-requires = [
-    "google-cloud-storage",
-    "minio",
-    "python-dotenv",
-    "typing_extensions",
-]
-home-page = "https://github.com/awill1988/multicloud-storage"
+[tool.poetry]
+name = "multicloud-storage"
+description = ""
+version = "0.1.0"
+readme = "README.md"
+authors = ["Adam Williams <adam.williams@onxmaps.com>"]
 classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-description-file = "README.md"
-requires-python = ">=3.7"
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+google-cloud-storage = "^1.41.0"
+minio = "^7.1.0"
+python-dotenv = "^0.18.0"
+typing-extensions = "3.10.0.0"
+
+[tool.poetry.dev-dependencies]
 
 [tool.black]
 line-length = 10

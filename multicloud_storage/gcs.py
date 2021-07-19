@@ -131,6 +131,7 @@ class GCS(StorageClient):
         method: Union[str, HttpMethod],
         expires: Optional[timedelta],
         content_type: Optional[str] = None,
+        use_hostname: Optional[str] = None,
         *_,
     ) -> str:
         if not self.bucket_exists(bucket_name):
@@ -148,9 +149,12 @@ class GCS(StorageClient):
             )
         if self._use_public_urls:
             _scheme = "http" if not self._secure else "https"
+            _hostname = (
+                use_hostname if use_hostname else self._external_hostname
+            )
             public_url = blob.public_url.replace(
                 "https://storage.googleapis.com",
-                f"{_scheme}://{self._external_hostname}",
+                f"{_scheme}://{_hostname}",
             )
             return public_url
         url = blob.generate_signed_url(

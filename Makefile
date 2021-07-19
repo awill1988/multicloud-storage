@@ -56,8 +56,9 @@ coverage:  ## Run tests with coverage
 
 deps: venv check-tools  ## Install dependencies
 	$(PYTHON) -m pip install --upgrade pip
-	$(PYTHON) -m pip install black coverage flake8 flake8_docstrings flit mccabe mypy pylint pytest tox tox-gh-actions
-	$(PYTHON) -m flit install
+	$(PYTHON) -m pip install black coverage flake8 flake8_docstrings poetry mccabe mypy pylint pytest tox tox-gh-actions
+	$(PYTHON) -m poetry install
+	$(PYTHON) -m poetry update
 
 lint:  ## Lint and static-check
 	$(PYTHON) -m flake8 $(PROJECT)
@@ -65,10 +66,7 @@ lint:  ## Lint and static-check
 	$(PYTHON) -m mypy $(PROJECT)
 
 build:	## Build
-	$(PYTHON) -m flit build
-
-publish:  ## Publish to PyPi
-	$(PYTHON) -m flit publish
+	$(PYTHON) -m poetry build
 
 push:  ## Push code with tags
 	git push && git push --tags
@@ -82,7 +80,7 @@ tox:   ## Run tox
 	$(PYTHON) -m tox
 
 clean: clean-venv   ## Clean
-	@$(RM) -rf .eggs .mypy_cache .pytest_cache .tox tests/__pycache__ $(PROJECT)/__pycache__ .coverage .venv Makefile.venv
+	@$(RM) -rf .eggs .mypy_cache .pytest_cache .tox tests/__pycache__ $(PROJECT)/__pycache__ .coverage .venv Makefile.venv *.egg-info dist
 
 check-tools: ## ensures required software is installed
 	@if command -v gcloud >/dev/null 2>&1 ; then \
