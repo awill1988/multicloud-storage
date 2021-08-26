@@ -22,7 +22,6 @@ class StorageClient(ABC):
     level operations based on those primitives.
     """
 
-    @classmethod
     @abstractmethod
     def configure(cls) -> None:
         pass

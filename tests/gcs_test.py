@@ -71,6 +71,12 @@ class GCSTest(unittest.TestCase):
         except:  # pylint: disable=bare-except
             pass
 
+    def test_configurable_project(self):
+        self.assertEqual(self.gcs._project(), "localstack")
+        different_client = Storage(GCS("other_project"))
+        self.assertEqual(different_client._client._project(), "other_project")
+        self.assertEqual(self.gcs._project(), "localstack")
+
     def test_is_abstract(self):
         self.assertEqual(Storage, type(self.storage))
         self.assertNotEqual(Storage, type(self.gcs))

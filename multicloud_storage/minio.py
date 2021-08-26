@@ -9,7 +9,6 @@ from minio.credentials import Credentials
 from minio.deleteobjects import DeleteObject
 from minio.error import S3Error
 from minio.signer import presign_v4
-from requests import head
 
 from .config import config
 from .exception import StorageException
@@ -64,15 +63,16 @@ class S3(StorageClient):
     S3.
     """
 
-    _secure: bool = False
-    _minio_client: Minio = None
-    _endpoint: Optional[str] = None
-    _external_hostname: Optional[str] = None
-    _credentials: Credentials = None
-    _region: str = "us-east-1"
+    def __init__(self) -> None:
+        super().__init__()
+        self._secure: bool = False
+        self._minio_client: Minio = None
+        self._endpoint: Optional[str] = None
+        self._external_hostname: Optional[str] = None
+        self._credentials: Credentials = None
+        self._region: str = "us-east-1"
 
-    @classmethod
-    def configure(cls) -> None:
+    def configure(self) -> None:
         s3_config = {
             key: value
             for key, value in config().items()
@@ -86,28 +86,28 @@ class S3(StorageClient):
                 "STORAGE_EXTERNAL_HOSTNAME",
             )
         }
-        cls._endpoint = s3_config["S3_ENDPOINT"]
-        cls._region = (
+        self._endpoint = s3_config["S3_ENDPOINT"]
+        self._region = (
             s3_config["AWS_REGION"]
             if s3_config["AWS_REGION"] is not None
-            else cls._region
+            else self._region
         )
-        cls._external_hostname = (
+        self._external_hostname = (
             s3_config["STORAGE_EXTERNAL_HOSTNAME"]
             if s3_config["STORAGE_EXTERNAL_HOSTNAME"] is not None
-            else cls._endpoint
+            else self._endpoint
         )
-        cls._credentials = _credentials(
+        self._credentials = _credentials(
             s3_config["AWS_ACCESS_KEY_ID"],
             s3_config["AWS_SECRET_ACCESS_KEY"],
             None,
         )
-        cls._minio_client = Minio(
-            cls._endpoint,
-            access_key=cls._credentials.access_key,
-            secret_key=cls._credentials.secret_key,
+        self._minio_client = Minio(
+            self._endpoint,
+            access_key=self._credentials.access_key,
+            secret_key=self._credentials.secret_key,
             session_token=None,
-            secure=cls._secure,
+            secure=self._secure,
             region=s3_config["AWS_REGION"],
         )
 
