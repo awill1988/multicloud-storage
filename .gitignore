@@ -139,3 +139,5 @@ cython_debug/
 .idea/
 
 Makefile.venv
+.lh
+.history

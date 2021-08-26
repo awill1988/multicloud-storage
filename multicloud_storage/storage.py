@@ -17,10 +17,7 @@ class Storage:
     Implementation hierarchy and delegates all of the real work to this object.
     """
 
-    def __init__(
-        self,
-        client: StorageClient,
-    ) -> None:
+    def __init__(self, client: StorageClient) -> None:
         self._client = client
         self._client.configure()
 

@@ -18,30 +18,29 @@ class GCS(StorageClient):
     GCS.
     """
 
-    _gcs_client: Client = None
-    _gcs_project = None
-    _use_public_urls: Optional[bool] = None
-    _emulator_hostname: Optional[str] = None
-    _external_hostname: Optional[str] = None
-    _secure: bool = True
+    def __init__(self, project: str = None) -> None:
+        super().__init__()
+        self._gcs_client: Client = None
+        self._use_public_urls: Optional[bool] = None
+        self._emulator_hostname: Optional[str] = None
+        self._external_hostname: Optional[str] = None
+        self._secure: bool = True
+        self._gcs_project = project
 
-    @classmethod
     def _project(cls):
         if cls._gcs_project is None:
             raise StorageException(
                 "gcs client requires that the GOOGLE_CLOUD_PROJECT env"
-                " variable is present"
+                " variable is present or an option is passed"
             )
         return cls._gcs_project
 
-    @classmethod
     def _client(cls):
         if cls._gcs_client is None:
             raise StorageException("gcs client has not been configured")
         return cls._gcs_client
 
-    @classmethod
-    def configure(cls) -> None:
+    def configure(self) -> None:
         gcs_config = {
             key: value
             for key, value in config().items()
@@ -52,26 +51,32 @@ class GCS(StorageClient):
                 "STORAGE_EXTERNAL_HOSTNAME",
             )
         }
-        cls._gcs_project = gcs_config["GOOGLE_CLOUD_PROJECT"]
-        cls._emulator_hostname = gcs_config["STORAGE_EMULATOR_HOST"]
 
-        cls._external_hostname = (
-            gcs_config["STORAGE_EXTERNAL_HOSTNAME"]
-            if gcs_config["STORAGE_EXTERNAL_HOSTNAME"] is not None
-            else cls._emulator_hostname
+        self._gcs_project = (
+            gcs_config["GOOGLE_CLOUD_PROJECT"]
+            if self._gcs_project is None
+            else self._gcs_project
         )
 
-        if cls._emulator_hostname is not None:
-            if cls._emulator_hostname.find("https") == -1:
-                cls._secure = False
+        self._emulator_hostname = gcs_config["STORAGE_EMULATOR_HOST"]
+
+        self._external_hostname = (
+            gcs_config["STORAGE_EXTERNAL_HOSTNAME"]
+            if gcs_config["STORAGE_EXTERNAL_HOSTNAME"] is not None
+            else self._emulator_hostname
+        )
+
+        if self._emulator_hostname is not None:
+            if self._emulator_hostname.find("https") == -1:
+                self._secure = False
 
             logger.debug(
                 "will not sign urls due to presense of %s",
                 "STORAGE_EMULATOR_HOST",
             )
-            cls._use_public_urls = True
+            self._use_public_urls = True
 
-        cls._gcs_client = Client(project=cls._gcs_project)
+        self._gcs_client = Client(project=self._gcs_project)
 
     def bucket_exists(self, name: str) -> bool:
         bucket = self._client().bucket(name)
