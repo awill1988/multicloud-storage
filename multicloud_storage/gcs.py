@@ -2,9 +2,9 @@ from base64 import b64decode
 from binascii import hexlify
 from datetime import timedelta
 from io import BytesIO
-from typing import Optional, Union
+from typing import Iterator, Optional, Union
 
-from google.cloud.storage import Client
+from google.cloud.storage import Client, Blob
 
 from .client import StorageClient
 from .config import config
@@ -207,6 +207,16 @@ class GCS(StorageClient):
             )
             if not rewrite_token:
                 break
+
+    # TODO Pagination
+    def list_objects(
+        self, bucket_name: str, prefix: Optional[str]
+    ) -> Iterator[Blob]:
+        if not self.bucket_exists(bucket_name):
+            raise StorageException(
+                "bucket {0} does not exist".format(bucket_name)
+            )
+        return self._client().list_blobs(bucket_name, prefix=prefix)
 
     def rename_object(
         self,

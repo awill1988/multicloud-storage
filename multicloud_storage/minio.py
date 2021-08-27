@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from json import dumps
-from typing import Optional, Union
+from typing import Iterator, Optional, Union
 from urllib.parse import urlsplit
 from io import BytesIO
 from minio import Minio
@@ -9,7 +9,7 @@ from minio.credentials import Credentials
 from minio.deleteobjects import DeleteObject
 from minio.error import S3Error
 from minio.signer import presign_v4
-
+from minio.datatypes import Object
 from .config import config
 from .exception import StorageException
 from .http import HttpMethod
@@ -243,6 +243,16 @@ class S3(StorageClient):
 
         # use the "external" minio client so that signed urls work properly
         return signed_url.geturl()
+
+    # TODO Pagination
+    def list_objects(
+        self, bucket_name: str, prefix: Optional[str]
+    ) -> Iterator[Object]:
+        if not self.bucket_exists(bucket_name):
+            raise StorageException(
+                "bucket {0} does not exist".format(bucket_name)
+            )
+        return self._minio_client.list_objects(bucket_name, prefix)
 
     def copy_object(
         self,

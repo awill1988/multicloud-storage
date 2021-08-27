@@ -1,3 +1,4 @@
+from multicloud_storage.object import last_modified, name
 import random
 import string
 import unittest
@@ -6,7 +7,6 @@ from json import dumps, loads
 from os import SEEK_END
 from typing import Tuple
 from hashlib import md5
-from base64 import b64encode
 
 from multicloud_storage import S3, Storage, StorageException
 from multicloud_storage.http import HttpMethod
@@ -242,3 +242,15 @@ class S3Test(unittest.TestCase):
         self.assertGreater(len(checksum), 0)
         data.seek(0)
         self.assertEqual(calc_checksum(data), checksum)
+
+    def test_list_objects(self):
+        """
+        Asserts it is possible to list objects.
+        """
+        data, size = str_buffer(self.object_data)
+        self.storage.put_object(self.bucket_name, self.object_name, data, size)
+        objects = self.storage.list_objects(self.bucket_name)
+        retrieved_object = next(objects)
+        self.assertEqual(len(str(self.object_data)), retrieved_object.size)
+        self.assertNotEqual(None, last_modified(retrieved_object))
+        self.assertEqual(self.object_name, name(retrieved_object))

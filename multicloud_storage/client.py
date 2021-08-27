@@ -6,7 +6,8 @@ from abc import (
     abstractmethod,
 )
 from datetime import timedelta
-from typing import Optional, Union
+from multicloud_storage.object import StorageObject
+from typing import Iterator, Optional, Union
 from io import BytesIO
 from .http import HttpMethod
 
@@ -44,6 +45,14 @@ class StorageClient(ABC):
         bucket_name: str,
         name: str,
     ) -> BytesIO:
+        pass
+
+    @abstractmethod
+    def list_objects(
+        self,
+        bucket_name: str,
+        prefix: Optional[str],
+    ) -> Iterator[StorageObject]:
         pass
 
     @abstractmethod

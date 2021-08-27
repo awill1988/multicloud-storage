@@ -1,5 +1,6 @@
 from datetime import timedelta
-from typing import Optional, Union
+from multicloud_storage.object import StorageObject
+from typing import Iterator, Optional, Union
 from io import BytesIO
 
 from multicloud_storage.http import HttpMethod
@@ -100,6 +101,18 @@ class Storage:
             use_hostname,
             secure,
         )
+
+    def list_objects(
+        self,
+        bucket_name: str,
+        prefix: Optional[str] = None,
+    ) -> Iterator[StorageObject]:
+        logger.debug(
+            "list_objects(bucket_name='%s',prefix='%s')",
+            bucket_name,
+            prefix,
+        )
+        return self._client.list_objects(bucket_name, prefix)
 
     def copy_object(
         self,
