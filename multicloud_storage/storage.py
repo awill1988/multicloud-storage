@@ -1,6 +1,6 @@
 from datetime import timedelta
 from multicloud_storage.object import StorageObject
-from typing import Iterator, Optional, Union
+from typing import Iterator, List, Optional, Union
 from io import BytesIO
 
 from multicloud_storage.http import HttpMethod
@@ -152,6 +152,23 @@ class Storage:
             bucket_name,
             name,
             new_name,
+        )
+
+    def concat_objects(
+        self,
+        bucket_name: str,
+        destination_object: str,
+        source_objects: List[str],
+    ) -> None:
+        logger.debug(
+            "concat_objects(bucket_name='%s',"
+            "destination_object='%s',source_objects=%s)",
+            bucket_name,
+            destination_object,
+            source_objects,
+        )
+        return self._client.concat_objects(
+            bucket_name, destination_object, source_objects
         )
 
     def md5_checksum(self, bucket_name: str, name: str) -> str:

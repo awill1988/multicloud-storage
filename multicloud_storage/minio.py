@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from json import dumps
-from typing import Iterator, Optional, Union
+from typing import Iterator, List, Optional, Union
 from urllib.parse import urlsplit
-from io import BytesIO
+from io import SEEK_END, BytesIO
 from minio import Minio
 from minio.commonconfig import CopySource
 from minio.credentials import Credentials
@@ -15,6 +15,8 @@ from .exception import StorageException
 from .http import HttpMethod
 from .storage import StorageClient
 from .log import logger
+from tempfile import TemporaryDirectory
+from os.path import join
 
 
 def _credentials(
@@ -272,6 +274,43 @@ class S3(StorageClient):
             destination_name,
             CopySource(source_bucket_name, source_name),
         )
+
+    def concat_objects(
+        self,
+        bucket_name: str,
+        destination_object: str,
+        source_objects: List[str],
+    ) -> None:
+        if not self.object_exists(bucket_name, destination_object):
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    destination_object, bucket_name
+                )
+            )
+        for obj in source_objects:
+            if not self.object_exists(bucket_name, obj):
+                raise StorageException(
+                    "object {0} does not exist in bucket {1}".format(
+                        obj, bucket_name
+                    )
+                )
+
+        with TemporaryDirectory() as td:
+            filename = join(td, destination_object)
+
+            with open(filename, "wb") as tmp:
+                for obj in source_objects:
+                    data = self.get_object(bucket_name, obj)
+                    tmp.write(data.getbuffer())
+
+            with open(filename, "rb") as tmp:
+                data = BytesIO(tmp.read())
+                data.seek(0, SEEK_END)
+                num_bytes = data.tell()
+                data.seek(0)
+                self.put_object(
+                    bucket_name, destination_object, data, num_bytes
+                )
 
     def rename_object(
         self,

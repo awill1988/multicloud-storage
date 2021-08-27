@@ -2,7 +2,7 @@ from base64 import b64decode
 from binascii import hexlify
 from datetime import timedelta
 from io import BytesIO
-from typing import Iterator, Optional, Union
+from typing import Iterator, List, Optional, Union
 
 from google.cloud.storage import Client, Blob
 
@@ -217,6 +217,32 @@ class GCS(StorageClient):
                 "bucket {0} does not exist".format(bucket_name)
             )
         return self._client().list_blobs(bucket_name, prefix=prefix)
+
+    def concat_objects(
+        self,
+        bucket_name: str,
+        destination_object: str,
+        source_objects: List[str],
+    ) -> None:
+        if not self.object_exists(bucket_name, destination_object):
+            raise StorageException(
+                "object {0} does not exist in bucket {1}".format(
+                    destination_object, bucket_name
+                )
+            )
+        for obj in source_objects:
+            if not self.object_exists(bucket_name, obj):
+                raise StorageException(
+                    "object {0} does not exist in bucket {1}".format(
+                        obj, bucket_name
+                    )
+                )
+        blob = self._client().bucket(bucket_name).blob(destination_object)
+        blobs: List[Blob] = list()
+        for obj in source_objects:
+            blobs.append(self._client().bucket(bucket_name).blob(obj))
+        blob.compose(blobs)
+        return
 
     def rename_object(
         self,

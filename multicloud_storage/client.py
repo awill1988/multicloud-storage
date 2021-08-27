@@ -7,7 +7,7 @@ from abc import (
 )
 from datetime import timedelta
 from multicloud_storage.object import StorageObject
-from typing import Iterator, Optional, Union
+from typing import Iterator, List, Optional, Union
 from io import BytesIO
 from .http import HttpMethod
 
@@ -62,6 +62,15 @@ class StorageClient(ABC):
         name: str,
         data: BytesIO,
         size: int,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def concat_objects(
+        self,
+        bucket_name: str,
+        destination_object: str,
+        source_objects: List[str],
     ) -> None:
         pass
 

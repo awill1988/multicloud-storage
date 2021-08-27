@@ -249,3 +249,28 @@ class GCSTest(unittest.TestCase):
         self.assertEqual(len(str(self.object_data)), retrieved_object.size)
         self.assertNotEqual(None, last_modified(retrieved_object))
         self.assertEqual(self.object_name, name(retrieved_object))
+
+    def test_concat_objects(self):
+        """
+        Asserts it is possible to concat objects.
+        """
+        second_object_name = random_str()
+        data, size = str_buffer(self.object_data)
+        self.storage.put_object(self.bucket_name, self.object_name, data, size)
+        data.seek(0)
+        self.storage.put_object(
+            self.bucket_name, second_object_name, data, size
+        )
+        self.storage.concat_objects(
+            self.bucket_name,
+            self.object_name,
+            [self.object_name, second_object_name],
+        )
+        self.storage.delete_object(self.bucket_name, second_object_name)
+
+        self.storage.get_object(self.bucket_name, self.object_name)
+        data = self.storage.get_object(self.bucket_name, self.object_name)
+        self.assertEqual(
+            data.read().decode("utf-8"),
+            dumps(self.object_data) + dumps(self.object_data),
+        )

@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "multicloud-storage"
 description = ""
-version = "0.7.0"
+version = "0.8.0"
 readme = "README.md"
 authors = ["Adam Williams <adam.williams@onxmaps.com>"]
 classifiers = [
